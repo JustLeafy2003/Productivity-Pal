@@ -1,0 +1,155 @@
+import 'package:flutter/material.dart';
+import 'authentication_service.dart';
+import '../home_screen.dart';
+import '../user/user_service.dart';
+import '../tasks/task_service.dart';
+import '../notes/note_service.dart';
+import '../events/event_service.dart';
+import 'sign_in_screen.dart'; // Import sign-in screen
+
+class CreateAccountScreen extends StatelessWidget {
+  final AuthenticationService authService;
+  final UserService userService;
+  final TaskService taskService;
+  final NoteService noteService;
+  final EventService eventService;
+
+  final bool isDarkMode;
+  final int userId;
+
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  CreateAccountScreen({
+    required this.authService,
+    required this.userService,
+    required this.taskService,
+    required this.noteService,
+    required this.eventService,
+    required this.isDarkMode,
+    required this.userId,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Account'),
+      ),
+      body: Center(
+        child: FractionallySizedBox(
+          widthFactor: 0.75,
+          heightFactor: 0.75,
+          child: Card(
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const Text(
+                    'Create Account',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: usernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Username',
+                    ),
+                  ),
+                  TextField(
+                    controller: passwordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (usernameController.text.isEmpty ||
+                          passwordController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('Both username and password are required'),
+                          ),
+                        );
+                      } else {
+                        // Check if username is unique
+                        bool isUsernameUnique = await userService
+                            .isUsernameUnique(usernameController.text);
+
+                        if (!isUsernameUnique) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Username already exists. Please choose another one.'),
+                            ),
+                          );
+                        } else {
+                          await authService.signUp(
+                            usernameController.text,
+                            passwordController.text,
+                          );
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomeScreen(
+                                authService: authService,
+                                userService: userService,
+                                taskService: taskService,
+                                noteService: noteService,
+                                eventService: eventService,
+                                isDarkMode: isDarkMode,
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('Create Account'),
+                  ),
+                  const SizedBox(height: 20),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SignInScreen(
+                              authService: authService,
+                              userService: userService,
+                              taskService: taskService,
+                              noteService: noteService,
+                              eventService: eventService,
+                              isDarkMode: isDarkMode,
+                              userId: userId,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Already have an account? Sign in',
+                        style: TextStyle(
+                          color: Color(0xff6750a4),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
